@@ -1,47 +1,66 @@
-provider "aws" {
-  region = "us-east-1"  # Update with the desired AWS region
-}
+data "aws_ami" "app_ami" {
+  most_recent = true
 
-# Define the security group for the EC2 instance
-resource "aws_security_group" "allow_ssh" {
-  name        = "allow_ssh"
-  description = "Allow inbound SSH traffic"
-
-provider "aws" {
-  region = "us-east-1"  # Update with the desired AWS region
-}
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow SSH from anywhere (for production, restrict this)
+  filter {
+    name   = "name"
+    values = ["bitnami-tomcat-*-x86_64-hvm-ebs-nami"]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
+
+  owners = ["979382823631"] # Bitnami
 }
 
-# Define the EC2 instance resource
-resource "aws_instance" "my_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Update with the desired AMI ID (this is an example for Amazon Linux 2)
-  instance_type = "t3.micro"  # Update with the desired instance type
+data "aws_vpc" "default" {
+  default = true
+}
 
-  # Specify the security group to associate with the EC2 instance
-  security_groups = [aws_security_group.allow_ssh.name]
+resource "aws_instance" "blog" {
+  ami                    = data.aws_ami.app_ami.id
+  instance_type          = var.instance_type
+  vpc_security_group_ids = [aws_security_group.blog.id]
 
   tags = {
-    Name = "MyEC2Instance"
+    Name = "Learning Terraform"
   }
-
-  # Optionally, define a key pair if you want to SSH into the instance
-  key_name = "your-key-name"  # Replace with your own key name, or leave it out if not needed
 }
 
-# Output the public IP of the instance
-output "instance_public_ip" {
-  value = aws_instance.my_instance.public_ip
+resource "aws_security_group" "blog" {
+  name = "blog"
+  tags = {
+    Terraform = "true"
+  }
+  vpc_id = data.aws_vpc.default.id
+}
+
+resource "aws_security_group_rule" "blog_http_in" {
+  type        = "ingress"
+  from_port   = 80
+  to_port     = 80
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.blog.id
+}
+
+
+resource "aws_security_group_rule" "blog_https_in" {
+  type        = "ingress"
+  from_port   = 443
+  to_port     = 443
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.blog.id
+}
+
+
+resource "aws_security_group_rule" "blog_everything_out" {
+  type        = "egress"
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.blog.id
 }
