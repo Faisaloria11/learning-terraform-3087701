@@ -7,6 +7,9 @@ resource "aws_security_group" "allow_ssh" {
   name        = "allow_ssh"
   description = "Allow inbound SSH traffic"
 
+provider "aws" {
+  region = "us-east-1"  # Update with the desired AWS region
+}
   ingress {
     from_port   = 22
     to_port     = 22
