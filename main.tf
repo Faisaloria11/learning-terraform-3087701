@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-west-2"  # Update with the desired AWS region
+  region = "us-east-1"  # Update with the desired AWS region
 }
 
 # Define the security group for the EC2 instance
