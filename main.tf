@@ -17,6 +17,8 @@ data "aws_ami" "app_ami" {
 resource "aws_instance" "web" {
   ami           = data.aws_ami.app_ami.id
   instance_type = "t3.nano"
+  
+  vpc_id = aws_vpc.vpc-356d9b48.id
   subnet_id = "subnet-6da30532"
 
   tags = {
